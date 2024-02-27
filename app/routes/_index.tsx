@@ -20,16 +20,27 @@ export function headers({
 
 function Clock() {
   const [weather, setWeather] = useState(null);
+  const [date, setDate] = useState(new Date());
+  const [location, setLocation] = useState(null);
+
 
   useEffect(() => {
-    async function getWeather() {
-      const response = await fetch(
-        "https://api.openweathermap.org/data/2.5/weather?q=Kathmandu&appid=YOUR_API_KEY"
-      );
-      const data = await response.json();
-      setWeather(data);
-    }
-    getWeather();
+    const interval = setInterval(() => {
+      setDate(new Date()); 
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(position => {
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&format=json`)
+        .then(response => response.json())
+        .then(data => {
+          setLocation(data.municipality || data.address.city);
+        })
+    });
   }, []);
 
   return (
@@ -53,9 +64,9 @@ function Clock() {
       </div>
       {/* Clock */}
       <div className="text-center mt-5">
-        <h1 className="text-3xl mb-4">Kathmandu Time</h1>
+        <h1 className="text-3xl mb-4">{location} Time</h1>
         <div className="text-6xl font-bold">
-          {getCurrentTime("Asia/Kathmandu")}
+        {date.toLocaleTimeString()}
         </div>
         <div className="text-xl mt-4">GMT: {getCurrentTime("GMT")}</div>
       </div>
@@ -67,7 +78,7 @@ function Clock() {
 function getCurrentTime(timezone) {
   const options = {
     timeZone: timezone,
-    hour12: false,
+    hour12: true,
     hour: "numeric",
     minute: "numeric",
     second: "numeric",
